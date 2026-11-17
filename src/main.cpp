@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
+#include <complex>
 
 void keep_green_only(sil::Image &image)
 {
@@ -414,32 +415,79 @@ float brightness(glm::vec3 color)
     return 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
 }
 
-void sorting_all_pixels(sil::Image &image) {
-    std::sort(image.pixels().begin(), image.pixels().end(), [](glm::vec3 const& color1, glm::vec3 const& color2)
-    {
-        return brightness(color1) < brightness(color2);
-    });
+void sorting_all_pixels(sil::Image &image)
+{
+    std::sort(image.pixels().begin(), image.pixels().end(), [](glm::vec3 const &color1, glm::vec3 const &color2)
+              { return brightness(color1) < brightness(color2); });
 }
 
 void sorting_pixels_line_by_line(sil::Image &image)
 {
     for (int ligne{}; ligne < image.height(); ligne++)
     {
-        std::sort(image.pixels().begin() + image.width()*ligne, image.pixels().begin() + image.width() + image.width()*ligne, [](glm::vec3 const &color1, glm::vec3 const &color2)
-            { return brightness(color1) < brightness(color2); });
+        std::sort(image.pixels().begin() + image.width() * ligne, image.pixels().begin() + image.width() + image.width() * ligne, [](glm::vec3 const &color1, glm::vec3 const &color2)
+                  { return brightness(color1) < brightness(color2); });
     }
 }
 
 void sorting_pixels_randomly(sil::Image &image)
 {
-    int const number_of_random_lines {50};
+    int const number_of_random_lines{50};
     for (int i{}; i < number_of_random_lines; i++)
     {
-        int start_line{std::rand()%(image.width()*image.height())+1};
-        int end_line{start_line+60};
+        int start_line{std::rand() % (image.pixels().size()-1) + 1};
+        int end_line{start_line + 60};
 
         std::sort(image.pixels().begin() + start_line, image.pixels().begin() + end_line, [](glm::vec3 const &color1, glm::vec3 const &color2)
-            { return brightness(color1) < brightness(color2); });
+                  { return brightness(color1) < brightness(color2); });
+    }
+}
+
+void fractale(sil::Image &image)
+{
+    int const precision {15};
+    for (int x{0}; x < image.width(); x++)
+    {
+        for (int y{0}; y < image.height(); y++)
+        {
+            std::complex<float> c {(static_cast<float>(x-image.width())/2)/100 +1.5, (static_cast<float>(y-image.height())/2)/100 +1}; //TODO mapper pour que ce soit entre -2 et 2
+            std::complex<float> z {0,0};
+            //verification de la fractal
+            float gradient {};
+            for (gradient; gradient < precision; gradient++)
+            {
+                //fractal artistique
+                z = sqrt(z)*z+c;
+                if(std::abs(z) > 2) {
+                    break;
+                }
+
+                //fractal normal
+                // z = z*z+c;
+                // if(std::abs(z) > 2) {
+                //     break;
+                // }
+            }
+            gradient /= precision;
+            image.pixel(x,y).r = gradient;
+            image.pixel(x,y).g = gradient;
+            image.pixel(x,y).b = gradient;
+        }
+    }
+}
+
+void gradient_between_two_colors(sil::Image& image, int width, glm::vec3 const color1, glm::vec3 const color2) {
+    glm::vec3 const pas = {(color2.r - color1.r) / width, (color2.g - color1.g) / width, (color2.b - color1.b) / width};
+    glm::vec3 color_gradient = {color1.r, color1.b, color1.g};
+    for (int x{0}; x < image.width(); x++)
+    {
+        for (int y{0}; y < image.height(); y++)
+        {
+            image.pixel(x, y).r += color_gradient.r;
+            image.pixel(x, y).g += color_gradient.g;
+            image.pixel(x, y).b += color_gradient.b;
+        }
+        color_gradient += pas;
     }
 }
 
@@ -530,6 +578,19 @@ int main()
     // image.save("output/sorting_all_pixels.png");
     // sorting_pixels_line_by_line(image);
     // image.save("output/sorting_pixels_line_by_line.png");
-    sorting_pixels_randomly(image);
-    image.save("output/sorting_pixels_randomly.png");
+    // sorting_pixels_randomly(image);
+    // image.save("output/sorting_pixels_randomly.png");
+
+    // fractal
+    // sil::Image image_fractale{500 /*width*/, 500 /*height*/};
+    // fractale(image_fractale);
+    // image_fractale.save("output/fractale.png");
+
+
+    //gradient_between_two_colors
+    sil::Image image_gradient{300/*width*/, 200/*height*/};
+    glm::vec3 color2 = {0.f, 1.f, 0.f};
+    glm::vec3 color1 = {1.f, 0.f, 0.f};
+    gradient_between_two_colors(image_gradient, 300, color1, color2);
+    image_gradient.save("output/gradient_between_two_colors.png");
 };
