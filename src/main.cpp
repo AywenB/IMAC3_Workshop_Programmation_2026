@@ -1,6 +1,7 @@
 #include <sil/sil.hpp>
 #include <iostream>
 #include <string>
+#include <algorithm>
 
 void keep_green_only(sil::Image &image)
 {
@@ -408,15 +409,37 @@ void glitch(sil::Image &image)
     }
 }
 
-void sorting_pixels(sil::Image &image)
+float brightness(glm::vec3 color)
 {
+    return 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
+}
 
-    for (int x{0}; x < width_glitch_random_number; x++)
+void sorting_all_pixels(sil::Image &image) {
+    std::sort(image.pixels().begin(), image.pixels().end(), [](glm::vec3 const& color1, glm::vec3 const& color2)
     {
-        for (int y{0}; y < height_glitch_random_number; y++)
-        {
-            std::swap(image.pixel(x + x_center_random_number, y + y_center_random_number) /*normal*/, image.pixel(x + x_center_glitch_random_number, y + y_center_glitch_random_number) /*glitch*/);
-        }
+        return brightness(color1) < brightness(color2);
+    });
+}
+
+void sorting_pixels_line_by_line(sil::Image &image)
+{
+    for (int ligne{}; ligne < image.height(); ligne++)
+    {
+        std::sort(image.pixels().begin() + image.width()*ligne, image.pixels().begin() + image.width() + image.width()*ligne, [](glm::vec3 const &color1, glm::vec3 const &color2)
+            { return brightness(color1) < brightness(color2); });
+    }
+}
+
+void sorting_pixels_randomly(sil::Image &image)
+{
+    int const number_of_random_lines {50};
+    for (int i{}; i < number_of_random_lines; i++)
+    {
+        int start_line{std::rand()%(image.width()*image.height())+1};
+        int end_line{start_line+60};
+
+        std::sort(image.pixels().begin() + start_line, image.pixels().begin() + end_line, [](glm::vec3 const &color1, glm::vec3 const &color2)
+            { return brightness(color1) < brightness(color2); });
     }
 }
 
@@ -503,6 +526,10 @@ int main()
     //  image.save("output/glitch.png");
 
     // tri de pixel
-    sorting_pixels(image);
-    image.save("output/sorting_pixels.png");
+    // sorting_all_pixels(image);
+    // image.save("output/sorting_all_pixels.png");
+    // sorting_pixels_line_by_line(image);
+    // image.save("output/sorting_pixels_line_by_line.png");
+    sorting_pixels_randomly(image);
+    image.save("output/sorting_pixels_randomly.png");
 };
