@@ -3,6 +3,8 @@
 #include <string>
 #include <algorithm>
 #include <complex>
+#include <glm/gtx/matrix_transform_2d.hpp>
+// #include <glm>
 
 void keep_green_only(sil::Image &image)
 {
@@ -211,8 +213,7 @@ void create_a_circle(sil::Image &image)
     }
 };
 
-void create_border_circle(sil::Image &image)
-{
+void create_border_circle(sil::Image &image){
     unsigned int const radius_circle{100};
     unsigned int const thickness{10};
     int const center_x{image.width() / 2};
@@ -234,8 +235,7 @@ void create_border_circle(sil::Image &image)
     }
 };
 
-void create_an_animation(sil::Image &image)
-{
+void create_an_animation(sil::Image &image){
     unsigned int const radius_circle{100};
     int center_x{0};
     int const center_y{image.height() / 2};
@@ -274,8 +274,7 @@ void create_an_animation(sil::Image &image)
     }
 };
 
-void rosace(sil::Image &image)
-{
+void rosace(sil::Image &image){
     unsigned int const radius_circle{100};
     unsigned int const thickness{5};
     double const pas_angle{60 * M_PI / 180};
@@ -322,8 +321,7 @@ void rosace(sil::Image &image)
     }
 };
 
-void mosaique(sil::Image &image)
-{
+void mosaique(sil::Image &image) {
     sil::Image image_mosaique{image.width() /*width*/, image.height() /*height*/};
     int const number_of_repetition{7};
     for (int x{}; x < image_mosaique.width(); x++)
@@ -348,8 +346,7 @@ void mosaique_mirroir_reverse_ligne(sil::Image &image)
     }
 }
 
-void mosaique_mirroir(sil::Image &image)
-{
+void mosaique_mirroir(sil::Image &image) {
     sil::Image image_mosaique{image.width() /*width*/, image.height() /*height*/};
     int const number_of_repetition{5};
     int tour{};
@@ -415,8 +412,7 @@ float brightness(glm::vec3 color)
     return 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
 }
 
-void sorting_all_pixels(sil::Image &image)
-{
+void sorting_all_pixels(sil::Image &image) {
     std::sort(image.pixels().begin(), image.pixels().end(), [](glm::vec3 const &color1, glm::vec3 const &color2)
               { return brightness(color1) < brightness(color2); });
 }
@@ -477,19 +473,484 @@ void fractale(sil::Image &image)
 }
 
 void gradient_between_two_colors(sil::Image& image, int width, glm::vec3 const color1, glm::vec3 const color2) {
-    glm::vec3 const pas = {(color2.r - color1.r) / width, (color2.g - color1.g) / width, (color2.b - color1.b) / width};
-    glm::vec3 color_gradient = {color1.r, color1.b, color1.g};
+    //v1
+    
+    // glm::vec3 const pas = {(color2.r - color1.r) / width, (color2.g - color1.g) / width, (color2.b - color1.b) / width};
+    // glm::vec3 color_gradient = {color1.r, color1.b, color1.g};
+    // for (int x{0}; x < image.width(); x++)
+    // {
+    //     for (int y{0}; y < image.height(); y++)
+    //     {
+    //         image.pixel(x, y).r += color_gradient.r;
+    //         image.pixel(x, y).g += color_gradient.g;
+    //         image.pixel(x, y).b += color_gradient.b;
+    //     }
+    //     color_gradient += pas;
+    // }
+
+    //v2
+
+    for (float x{0}; x < image.width(); x++)
+    {
+        for (int y{0}; y < image.height(); y++)
+        {
+            glm::vec3 color_mixed = glm::mix(color1, color2, x/image.width());
+            image.pixel(x, y).r = color_mixed.r;
+            image.pixel(x,y).g = color_mixed.g;
+            image.pixel(x, y).b = color_mixed.b;
+        }
+    }
+}
+
+//gradient avec Oklab
+struct Lab {double L; double a; double b;};
+// struct RGB {double r; double g; double b;};
+
+Lab linear_srgb_to_oklab(glm::vec3 c)  {
+    double l = 0.4122214708f * c.r + 0.5363325363f * c.g + 0.0514459929f * c.b;
+	double m = 0.2119034982f * c.r + 0.6806995451f * c.g + 0.1073969566f * c.b;
+	double s = 0.0883024619f * c.r + 0.2817188376f * c.g + 0.6299787005f * c.b;
+
+    double l_ = cbrtf(l);
+    double m_ = cbrtf(m);
+    double s_ = cbrtf(s);
+
+    return {
+        0.2104542553f*l_ + 0.7936177850f*m_ - 0.0040720468f*s_,
+        1.9779984951f*l_ - 2.4285922050f*m_ + 0.4505937099f*s_,
+        0.0259040371f*l_ + 0.7827717662f*m_ - 0.8086757660f*s_,
+    };
+}
+
+glm::vec3 oklab_to_linear_srgb(Lab c) 
+{
+    double l_ = c.L + 0.3963377774f * c.a + 0.2158037573f * c.b;
+    double m_ = c.L - 0.1055613458f * c.a - 0.0638541728f * c.b;
+    double s_ = c.L - 0.0894841775f * c.a - 1.2914855480f * c.b;
+
+    double l = l_*l_*l_;
+    double m = m_*m_*m_;
+    double s = s_*s_*s_;
+
+    return {
+		+4.0767416621f * l - 3.3077115913f * m + 0.2309699292f * s,
+		-1.2684380046f * l + 2.6097574011f * m - 0.3413193965f * s,
+		-0.0041960863f * l - 0.7034186147f * m + 1.7076147010f * s,
+    };
+}
+
+glm::vec3 srgb_to_linear_srgb(glm::vec3 color)  {
+    color.r = ( color.r < 0.04045 ) ? color.r * 0.0773993808 : pow( color.r * 0.9478672986 + 0.0521327014, 2.4 );
+    color.g = ( color.g < 0.04045 ) ? color.g * 0.0773993808 : pow( color.g * 0.9478672986 + 0.0521327014, 2.4 );
+    color.b = ( color.b < 0.04045 ) ? color.b * 0.0773993808 : pow( color.b * 0.9478672986 + 0.0521327014, 2.4 );
+    return color;
+}
+
+glm::vec3 linear_srgb_to_srgb(glm::vec3 color)  {
+    color.r = ( color.r < 0.0031308 ) ? color.r * 12.92 : 1.055 * ( pow( color.r, 0.41666 ) ) - 0.055;
+    color.g = ( color.g < 0.0031308 ) ? color.g * 12.92 : 1.055 * ( pow( color.g, 0.41666 ) ) - 0.055;
+    color.b = ( color.b < 0.0031308 ) ? color.b * 12.92 : 1.055 * ( pow( color.b, 0.41666 ) ) - 0.055;
+    return color;
+}
+
+void gradient_oklab_between_two_colors(sil::Image& image, glm::vec3 color1, glm::vec3 color2) {
+    glm::vec3 srgb_color_gradient;
+
+    //conversion vers oklab
+    Lab color1_lab = linear_srgb_to_oklab(srgb_to_linear_srgb(color1));
+    Lab color2_lab = linear_srgb_to_oklab(srgb_to_linear_srgb(color2));
+    
+    //definition du dégradé
+    Lab const pas = {(color2_lab.L - color1_lab.L) / image.width(), (color2_lab.a - color1_lab.a) / image.width(), (color2_lab.b - color1_lab.b) / image.width()};
+    Lab color_gradient = {color1_lab.L, color1_lab.a, color1_lab.b};
+    
     for (int x{0}; x < image.width(); x++)
     {
         for (int y{0}; y < image.height(); y++)
         {
-            image.pixel(x, y).r += color_gradient.r;
-            image.pixel(x, y).g += color_gradient.g;
-            image.pixel(x, y).b += color_gradient.b;
+            //reconversion vers RGB
+            srgb_color_gradient = linear_srgb_to_srgb(oklab_to_linear_srgb(color_gradient));
+
+            //mise en place du pixel dans l'image
+            image.pixel(x, y).r += srgb_color_gradient.r;
+            image.pixel(x, y).g += srgb_color_gradient.g;
+            image.pixel(x, y).b += srgb_color_gradient.b;
         }
-        color_gradient += pas;
+        color_gradient.a += pas.a;
+        color_gradient.b += pas.b;
+        color_gradient.L += pas.L;
     }
 }
+
+
+glm::vec2 rotated(glm::vec2 point, glm::vec2 center_of_rotation, float angle)
+{
+    return glm::vec2{glm::rotate(glm::mat3{1.f}, angle) * glm::vec3{point - center_of_rotation, 0.f}} + center_of_rotation;
+}
+
+void bricbrac(sil::Image& image) {
+    for (int x {}; x < image.width(); x++)
+    {
+        for (int y {}; y < image.height(); y++)
+        {
+            glm::vec2 pixel_rotated = rotated({x,y}, {image.width()/2, image.height()/2}, 1.25); 
+            pixel_rotated.x = pixel_rotated.x < 0 ? 0 : pixel_rotated.x;
+            pixel_rotated.x = pixel_rotated.x >= image.width() ? image.width()-1 : pixel_rotated.x;
+            pixel_rotated.y = pixel_rotated.y < 0 ? 0 : pixel_rotated.y;
+            pixel_rotated.y = pixel_rotated.y >= image.height() ? image.height()-1 : pixel_rotated.y;
+            std::swap(image.pixel(x,y), image.pixel(pixel_rotated.x,pixel_rotated.y));
+        }
+    }
+}
+
+float distance_between_two_points(glm::vec2 point1, glm::vec2 point2) {
+    return sqrt(pow((point1.x-point2.y), 2)+pow((point1.x-point2.y), 2));
+}
+
+void oeil_terrifiant(sil::Image& image) {
+    for (int x {}; x < image.width(); x++)
+    {
+        for (int y {}; y < image.height(); y++)
+        {
+            //calcul distance entre deux points
+            float distance = distance_between_two_points({x,y}, {image.width()/2, image.height()/2});
+
+            //calcule position point qui tourne
+            glm::vec2 pixel_rotated = rotated({x,y}, {image.width()/2, image.height()/2}, M_PI*distance); 
+            pixel_rotated.x = pixel_rotated.x < 0 ? 0 : pixel_rotated.x;
+            pixel_rotated.x = pixel_rotated.x >= image.width() ? image.width()-1 : pixel_rotated.x;
+            pixel_rotated.y = pixel_rotated.y < 0 ? 0 : pixel_rotated.y;
+            pixel_rotated.y = pixel_rotated.y >= image.height() ? image.height()-1 : pixel_rotated.y;
+            std::swap(image.pixel(x,y), image.pixel(pixel_rotated.x,pixel_rotated.y));
+        }
+    } 
+}
+
+void vortex(sil::Image& image) {
+    sil::Image image_vortex = {image.width(), image.height()};
+    for (int x {}; x < image.width(); x++)
+    {
+        for (int y {}; y < image.height(); y++)
+        {
+            //calcul distance entre deux points
+            float distance = distance_between_two_points({x,y}, {image.width()/2, image.height()/2});
+
+            //calcule position point qui tourne
+            glm::vec2 pixel_rotated = rotated({x,y}, {image.width()/2, image.height()/2}, distance/500);
+
+            pixel_rotated.x = pixel_rotated.x < 0 ? 0 : pixel_rotated.x;
+            pixel_rotated.x = pixel_rotated.x >= image.width() ? image.width()-1 : pixel_rotated.x;
+            pixel_rotated.y = pixel_rotated.y < 0 ? 0 : pixel_rotated.y;
+            pixel_rotated.y = pixel_rotated.y >= image.height() ? image.height()-1 : pixel_rotated.y;
+            std::swap(image.pixel(x,y), image_vortex.pixel(pixel_rotated.x,pixel_rotated.y));
+        }
+    }
+
+    image_vortex.save("output/vortex.png");
+}
+
+void blur(sil::Image& image) {
+    sil::Image image_blurred = {image.width(), image.height()};
+    int const strength_blur {5};
+    float r  {};
+    float g  {};
+    float b  {};
+    int x_coordonnee_finale {};
+    int y_coordonnee_finale {};
+    //on parcourt l'image
+    for (int x {0}; x < image.width(); x++)
+    {
+        for (int y {0}; y < image.height(); y++)
+        {
+            //addition de tous les pixels autour du pixel en cours
+            for (int x_autour {-strength_blur + x}; x_autour < strength_blur+1+x; x_autour++)
+            {
+                for (int y_autour {-strength_blur + y}; y_autour < strength_blur+1+y; y_autour++)
+                {
+                    //verification pour que ça ne sorte pas de l'image
+                    if(x_autour < 0) {
+                        x_coordonnee_finale = 0;
+                    } else if (x_autour >= image.width()){
+                        x_coordonnee_finale = image.width()-1;
+                    } else {
+                        x_coordonnee_finale = x_autour;
+                    }
+                    if(y_autour < 0) {
+                        y_coordonnee_finale = 0;
+                    } else if (y_autour >= image.height()){
+                        y_coordonnee_finale = image.height()-1;
+                    } else {
+                        y_coordonnee_finale = y_autour;
+                    }
+
+                    r += image.pixel(x_coordonnee_finale,y_coordonnee_finale).r/pow(2*strength_blur+1, 2);
+                    g += image.pixel(x_coordonnee_finale,y_coordonnee_finale).g/pow(2*strength_blur+1, 2);
+                    b += image.pixel(x_coordonnee_finale,y_coordonnee_finale).b/pow(2*strength_blur+1, 2);
+
+                    // std::cout << r << std::endl;
+                }
+            }
+            image_blurred.pixel(x,y).r = r;
+            image_blurred.pixel(x,y).g = g;
+            image_blurred.pixel(x,y).b = b;
+            //remise à 0
+            r = 0;
+            g=0;
+            b=0;
+
+            // std::cout << y << std::endl;
+        }
+    }
+
+    image_blurred.save("output/blur.png");
+}
+
+void neon(sil::Image& image) {
+    sil::Image image_blurred = {image.width(), image.height()};
+    int const strength_blur {13};
+    float r  {};
+    float g  {};
+    float b  {};
+    int x_coordonnee_finale {};
+    int y_coordonnee_finale {};
+    int importance_de_la_case {};
+    //on parcourt l'image
+    for (int x {0}; x < image.width(); x++)
+    {
+        for (int y {0}; y < image.height(); y++)
+        {
+            //addition de tous les pixels autour du pixel en cours
+            for (int x_autour {-strength_blur}; x_autour < strength_blur+1; x_autour++)
+            {
+                for (int y_autour {-strength_blur}; y_autour < strength_blur+1; y_autour++)
+                {
+                    //verification pour que ça ne sorte pas de l'image
+                    if(x_autour+x < 0) {
+                        x_coordonnee_finale = 0;
+                    } else if (x_autour+x >= image.width()){
+                        x_coordonnee_finale = image.width()-1;
+                    } else {
+                        x_coordonnee_finale = x_autour+x;
+                    }
+                    if(y_autour+y < 0) {
+                        y_coordonnee_finale = 0;
+                    } else if (y_autour+y >= image.height()){
+                        y_coordonnee_finale = image.height()-1;
+                    } else {
+                        y_coordonnee_finale = y_autour+y;
+                    }
+
+                    if(abs(y_autour)+abs(x_autour) == 0) {
+                        importance_de_la_case = 1;
+                    } else {
+                        importance_de_la_case = abs(y_autour)+abs(x_autour)*2;
+                    }
+                    r += image.pixel(x_coordonnee_finale,y_coordonnee_finale).r*(0.05/importance_de_la_case);
+                    g += image.pixel(x_coordonnee_finale,y_coordonnee_finale).g*(0.05/importance_de_la_case);
+                    b += image.pixel(x_coordonnee_finale,y_coordonnee_finale).b*(0.05/importance_de_la_case);
+
+                    // std::cout << r << std::endl;
+                }
+            }
+            image_blurred.pixel(x,y).r = r;
+            image_blurred.pixel(x,y).g = g;
+            image_blurred.pixel(x,y).b = b;
+            //remise à 0
+            r = 0;
+            g=0;
+            b=0;
+
+            // std::cout << y << std::endl;
+        }
+    }
+
+    image_blurred.save("output/neon.png");
+}
+
+void outline(sil::Image& image) {
+    sil::Image image_blurred = {image.width(), image.height()};
+    int const strength_blur {1};
+    float r  {};
+    float g  {};
+    float b  {};
+    int x_coordonnee_finale {};
+    int y_coordonnee_finale {};
+    int importance_de_la_case {};
+    //on parcourt l'image
+    for (int x {0}; x < image.width(); x++)
+    {
+        for (int y {0}; y < image.height(); y++)
+        {
+            //addition de tous les pixels autour du pixel en cours
+            for (int x_autour {-strength_blur}; x_autour < strength_blur+1; x_autour++)
+            {
+                for (int y_autour {-strength_blur}; y_autour < strength_blur+1; y_autour++)
+                {
+                    //verification pour que ça ne sorte pas de l'image
+                    if(x_autour+x < 0) {
+                        x_coordonnee_finale = 0;
+                    } else if (x_autour+x >= image.width()){
+                        x_coordonnee_finale = image.width()-1;
+                    } else {
+                        x_coordonnee_finale = x_autour+x;
+                    }
+                    if(y_autour+y < 0) {
+                        y_coordonnee_finale = 0;
+                    } else if (y_autour+y >= image.height()){
+                        y_coordonnee_finale = image.height()-1;
+                    } else {
+                        y_coordonnee_finale = y_autour+y;
+                    }
+
+                    if(abs(y_autour)+abs(x_autour) == 0) {
+                        importance_de_la_case = 8;
+                    } else {
+                        importance_de_la_case = -1;
+                    }
+                    // std::cout << x_autour << "|" << y_autour << ": " << 0.25/importance_de_la_case << std::endl;
+                    r += image.pixel(x_coordonnee_finale,y_coordonnee_finale).r*importance_de_la_case;
+                    g += image.pixel(x_coordonnee_finale,y_coordonnee_finale).g*importance_de_la_case;
+                    b += image.pixel(x_coordonnee_finale,y_coordonnee_finale).b*importance_de_la_case;
+                }
+            }
+            // std::cout << std::endl;
+            image_blurred.pixel(x,y).r = r;
+            image_blurred.pixel(x,y).g = g;
+            image_blurred.pixel(x,y).b = b;
+            //remise à 0
+            r = 0;
+            g=0;
+            b=0;
+
+            // std::cout << y << std::endl;
+        }
+    }
+    image_blurred.save("output/outline.png");
+}
+
+void emboss(sil::Image& image) {
+    sil::Image image_blurred = {image.width(), image.height()};
+    int const strength_blur {1};
+    float r  {};
+    float g  {};
+    float b  {};
+    int x_coordonnee_finale {};
+    int y_coordonnee_finale {};
+    int importance_de_la_case {};
+    //on parcourt l'image
+    for (int x {0}; x < image.width(); x++)
+    {
+        for (int y {0}; y < image.height(); y++)
+        {
+            //addition de tous les pixels autour du pixel en cours
+            for (int x_autour {-strength_blur}; x_autour < strength_blur+1; x_autour++)
+            {
+                for (int y_autour {-strength_blur}; y_autour < strength_blur+1; y_autour++)
+                {
+                    //verification pour que ça ne sorte pas de l'image
+                    if(x_autour+x < 0) {
+                        x_coordonnee_finale = 0;
+                    } else if (x_autour+x >= image.width()){
+                        x_coordonnee_finale = image.width()-1;
+                    } else {
+                        x_coordonnee_finale = x_autour+x;
+                    }
+                    if(y_autour+y < 0) {
+                        y_coordonnee_finale = 0;
+                    } else if (y_autour+y >= image.height()){
+                        y_coordonnee_finale = image.height()-1;
+                    } else {
+                        y_coordonnee_finale = y_autour+y;
+                    }
+
+                    if(abs(y_autour)+abs(x_autour) == 0) {
+                        importance_de_la_case = 1;
+                    } else {
+                        importance_de_la_case = y_autour+x_autour;
+                    }
+                    // std::cout << x_autour << "|" << y_autour << ": " << 0.25/importance_de_la_case << std::endl;
+                    r += image.pixel(x_coordonnee_finale,y_coordonnee_finale).r*importance_de_la_case;
+                    g += image.pixel(x_coordonnee_finale,y_coordonnee_finale).g*importance_de_la_case;
+                    b += image.pixel(x_coordonnee_finale,y_coordonnee_finale).b*importance_de_la_case;
+                }
+            }
+            // std::cout << std::endl;
+            image_blurred.pixel(x,y).r = r;
+            image_blurred.pixel(x,y).g = g;
+            image_blurred.pixel(x,y).b = b;
+            //remise à 0
+            r = 0;
+            g=0;
+            b=0;
+
+            // std::cout << y << std::endl;
+        }
+    }
+    image_blurred.save("output/embross.png");
+};
+
+void sharpen(sil::Image& image) {
+    sil::Image image_blurred = {image.width(), image.height()};
+    int const strength_blur {1};
+    float r  {};
+    float g  {};
+    float b  {};
+    int x_coordonnee_finale {};
+    int y_coordonnee_finale {};
+    int importance_de_la_case {};
+    //on parcourt l'image
+    for (int x {0}; x < image.width(); x++)
+    {
+        for (int y {0}; y < image.height(); y++)
+        {
+            //addition de tous les pixels autour du pixel en cours
+            for (int x_autour {-strength_blur}; x_autour < strength_blur+1; x_autour++)
+            {
+                for (int y_autour {-strength_blur}; y_autour < strength_blur+1; y_autour++)
+                {
+                    //verification pour que ça ne sorte pas de l'image
+                    if(x_autour+x < 0) {
+                        x_coordonnee_finale = 0;
+                    } else if (x_autour+x >= image.width()){
+                        x_coordonnee_finale = image.width()-1;
+                    } else {
+                        x_coordonnee_finale = x_autour+x;
+                    }
+                    if(y_autour+y < 0) {
+                        y_coordonnee_finale = 0;
+                    } else if (y_autour+y >= image.height()){
+                        y_coordonnee_finale = image.height()-1;
+                    } else {
+                        y_coordonnee_finale = y_autour+y;
+                    }
+
+                    if(abs(y_autour)+abs(x_autour) == 0) {
+                        importance_de_la_case = 5;
+                    } else if(abs(y_autour) == 1 && abs(x_autour) == 1){
+                        importance_de_la_case = -1;
+                    } else {
+                        importance_de_la_case = 0;
+                    }
+                    // std::cout << x_autour << "|" << y_autour << ": " << 0.25/importance_de_la_case << std::endl;
+                    r += image.pixel(x_coordonnee_finale,y_coordonnee_finale).r*importance_de_la_case;
+                    g += image.pixel(x_coordonnee_finale,y_coordonnee_finale).g*importance_de_la_case;
+                    b += image.pixel(x_coordonnee_finale,y_coordonnee_finale).b*importance_de_la_case;
+                }
+            }
+            // std::cout << std::endl;
+            image_blurred.pixel(x,y).r = r;
+            image_blurred.pixel(x,y).g = g;
+            image_blurred.pixel(x,y).b = b;
+            //remise à 0
+            r = 0;
+            g=0;
+            b=0;
+
+            // std::cout << y << std::endl;
+        }
+    }
+    image_blurred.save("output/sharpen.png");
+};
 
 int main()
 {
@@ -588,9 +1049,40 @@ int main()
 
 
     //gradient_between_two_colors
-    sil::Image image_gradient{300/*width*/, 200/*height*/};
-    glm::vec3 color2 = {0.f, 1.f, 0.f};
-    glm::vec3 color1 = {1.f, 0.f, 0.f};
-    gradient_between_two_colors(image_gradient, 300, color1, color2);
-    image_gradient.save("output/gradient_between_two_colors.png");
+    // sil::Image image_gradient{300/*width*/, 200/*height*/};
+    // glm::vec3 color2 = {0.f, 1.f, 0.f};
+    // glm::vec3 color1 = {1.f, 0.f, 0.f};
+    // gradient_between_two_colors(image_gradient, 300, color1, color2);
+    // image_gradient.save("output/gradient_between_two_colors.png");
+
+    //gradient_between_two_colors
+    // sil::Image image_gradient{300/*width*/, 200/*height*/};
+    // glm::vec3 color2 = {0.f, 1.f, 0.f};
+    // glm::vec3 color1 = {1.f, 0.f, 0.f};
+    // gradient_oklab_between_two_colors(image_gradient, color1, color2);
+    // image_gradient.save("output/gradient_oklab_between_two_colors.png");
+
+    //bricbrac
+    // bricbrac(image);
+    // image.save("output/bricbrac.png");
+
+    //oeil_terrifiant
+    // oeil_terrifiant(image);
+    // image.save("output/oeil_terrifiant.png");
+
+    //vortex TODO
+    // sil::Image photo{"images/photo.jpg"};
+    // vortex(photo);
+
+    //effet neon
+    // neon(image);
+
+    // //emboss
+    // emboss(image);
+
+    // //outline
+    // outline(image);
+
+    //sharpen
+    sharpen(image);
 };
