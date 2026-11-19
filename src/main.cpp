@@ -3,6 +3,7 @@
 #include <string>
 #include <algorithm>
 #include <complex>
+#include <cmath>
 #include <glm/gtx/matrix_transform_2d.hpp>
 // #include <glm>
 
@@ -582,7 +583,6 @@ void gradient_oklab_between_two_colors(sil::Image& image, glm::vec3 color1, glm:
     }
 }
 
-
 glm::vec2 rotated(glm::vec2 point, glm::vec2 center_of_rotation, float angle)
 {
     return glm::vec2{glm::rotate(glm::mat3{1.f}, angle) * glm::vec3{point - center_of_rotation, 0.f}} + center_of_rotation;
@@ -628,33 +628,33 @@ void oeil_terrifiant(sil::Image& image) {
 
 void vortex(sil::Image& image) {
     sil::Image image_vortex = {image.width(), image.height()};
+    glm::vec2 centre_rotation {image.width()/2, image.height()/2};
+    float angle = 4 * M_PI;
     for (int x {}; x < image.width(); x++)
     {
         for (int y {}; y < image.height(); y++)
         {
             //calcul distance entre deux points
-            float distance = distance_between_two_points({x,y}, {image.width()/2, image.height()/2});
-
+            float distance = glm::distance({x, y},centre_rotation);
+            float rotation = -angle*(distance/100);
             //calcule position point qui tourne
-            glm::vec2 pixel_rotated = rotated({x,y}, {image.width()/2, image.height()/2}, distance/500);
+            glm::vec2 pixel_rotated = rotated({x,y}, {image_vortex.width()/2, image_vortex.height()/2}, rotation);
 
-            pixel_rotated.x = pixel_rotated.x < 0 ? 0 : pixel_rotated.x;
-            pixel_rotated.x = pixel_rotated.x >= image.width() ? image.width()-1 : pixel_rotated.x;
-            pixel_rotated.y = pixel_rotated.y < 0 ? 0 : pixel_rotated.y;
-            pixel_rotated.y = pixel_rotated.y >= image.height() ? image.height()-1 : pixel_rotated.y;
-            std::swap(image.pixel(x,y), image_vortex.pixel(pixel_rotated.x,pixel_rotated.y));
+            if(pixel_rotated.x >= 0 && pixel_rotated.x < image.width() && pixel_rotated.y >= 0 && pixel_rotated.y < image.height()) {
+                image_vortex.pixel(x,y) = image.pixel(pixel_rotated.x,pixel_rotated.y);
+            }
+            // pixel_rotated.x = pixel_rotated.x < 0 ? 0 : pixel_rotated.x;
+            // pixel_rotated.x = pixel_rotated.x >= image.width() ? image.width()-1 : pixel_rotated.x;
+            // pixel_rotated.y = pixel_rotated.y < 0 ? 0 : pixel_rotated.y;
+            // pixel_rotated.y = pixel_rotated.y >= image.height() ? image.height()-1 : pixel_rotated.y;
         }
     }
-
     image_vortex.save("output/vortex.png");
 }
 
 void blur(sil::Image& image) {
-    sil::Image image_blurred = {image.width(), image.height()};
+    sil::Image finale_image = {image.width(), image.height()};
     int const strength_blur {5};
-    float r  {};
-    float g  {};
-    float b  {};
     int x_coordonnee_finale {};
     int y_coordonnee_finale {};
     //on parcourt l'image
@@ -662,6 +662,7 @@ void blur(sil::Image& image) {
     {
         for (int y {0}; y < image.height(); y++)
         {
+            glm::vec3 final_color = {{}, {}, {}};
             //addition de tous les pixels autour du pixel en cours
             for (int x_autour {-strength_blur + x}; x_autour < strength_blur+1+x; x_autour++)
             {
@@ -683,34 +684,23 @@ void blur(sil::Image& image) {
                         y_coordonnee_finale = y_autour;
                     }
 
-                    r += image.pixel(x_coordonnee_finale,y_coordonnee_finale).r/pow(2*strength_blur+1, 2);
-                    g += image.pixel(x_coordonnee_finale,y_coordonnee_finale).g/pow(2*strength_blur+1, 2);
-                    b += image.pixel(x_coordonnee_finale,y_coordonnee_finale).b/pow(2*strength_blur+1, 2);
-
-                    // std::cout << r << std::endl;
+                    final_color.r += image.pixel(x_coordonnee_finale,y_coordonnee_finale).r/pow(2*strength_blur+1, 2);
+                    final_color.g += image.pixel(x_coordonnee_finale,y_coordonnee_finale).g/pow(2*strength_blur+1, 2);
+                    final_color.b += image.pixel(x_coordonnee_finale,y_coordonnee_finale).b/pow(2*strength_blur+1, 2);
                 }
             }
-            image_blurred.pixel(x,y).r = r;
-            image_blurred.pixel(x,y).g = g;
-            image_blurred.pixel(x,y).b = b;
-            //remise à 0
-            r = 0;
-            g=0;
-            b=0;
-
-            // std::cout << y << std::endl;
+            finale_image.pixel(x,y).r = final_color.r;
+            finale_image.pixel(x,y).g = final_color.g;
+            finale_image.pixel(x,y).b = final_color.b;
         }
     }
 
-    image_blurred.save("output/blur.png");
+    finale_image.save("output/blur.png");
 }
 
 void neon(sil::Image& image) {
-    sil::Image image_blurred = {image.width(), image.height()};
+    sil::Image finale_image = {image.width(), image.height()};
     int const strength_blur {13};
-    float r  {};
-    float g  {};
-    float b  {};
     int x_coordonnee_finale {};
     int y_coordonnee_finale {};
     int importance_de_la_case {};
@@ -719,6 +709,7 @@ void neon(sil::Image& image) {
     {
         for (int y {0}; y < image.height(); y++)
         {
+            glm::vec3 final_color = {{}, {}, {}};
             //addition de tous les pixels autour du pixel en cours
             for (int x_autour {-strength_blur}; x_autour < strength_blur+1; x_autour++)
             {
@@ -745,34 +736,24 @@ void neon(sil::Image& image) {
                     } else {
                         importance_de_la_case = abs(y_autour)+abs(x_autour)*2;
                     }
-                    r += image.pixel(x_coordonnee_finale,y_coordonnee_finale).r*(0.05/importance_de_la_case);
-                    g += image.pixel(x_coordonnee_finale,y_coordonnee_finale).g*(0.05/importance_de_la_case);
-                    b += image.pixel(x_coordonnee_finale,y_coordonnee_finale).b*(0.05/importance_de_la_case);
+                    final_color.r += image.pixel(x_coordonnee_finale,y_coordonnee_finale).r*(0.05/importance_de_la_case);
+                    final_color.g += image.pixel(x_coordonnee_finale,y_coordonnee_finale).g*(0.05/importance_de_la_case);
+                    final_color.b += image.pixel(x_coordonnee_finale,y_coordonnee_finale).b*(0.05/importance_de_la_case);
 
-                    // std::cout << r << std::endl;
                 }
             }
-            image_blurred.pixel(x,y).r = r;
-            image_blurred.pixel(x,y).g = g;
-            image_blurred.pixel(x,y).b = b;
-            //remise à 0
-            r = 0;
-            g=0;
-            b=0;
-
-            // std::cout << y << std::endl;
+            finale_image.pixel(x,y).r = final_color.r;
+            finale_image.pixel(x,y).g = final_color.g;
+            finale_image.pixel(x,y).b = final_color.b;
         }
     }
 
-    image_blurred.save("output/neon.png");
+    finale_image.save("output/neon.png");
 }
 
 void outline(sil::Image& image) {
-    sil::Image image_blurred = {image.width(), image.height()};
+    sil::Image finale_image = {image.width(), image.height()};
     int const strength_blur {1};
-    float r  {};
-    float g  {};
-    float b  {};
     int x_coordonnee_finale {};
     int y_coordonnee_finale {};
     int importance_de_la_case {};
@@ -781,6 +762,7 @@ void outline(sil::Image& image) {
     {
         for (int y {0}; y < image.height(); y++)
         {
+            glm::vec3 final_color = {{}, {}, {}};
             //addition de tous les pixels autour du pixel en cours
             for (int x_autour {-strength_blur}; x_autour < strength_blur+1; x_autour++)
             {
@@ -807,33 +789,22 @@ void outline(sil::Image& image) {
                     } else {
                         importance_de_la_case = -1;
                     }
-                    // std::cout << x_autour << "|" << y_autour << ": " << 0.25/importance_de_la_case << std::endl;
-                    r += image.pixel(x_coordonnee_finale,y_coordonnee_finale).r*importance_de_la_case;
-                    g += image.pixel(x_coordonnee_finale,y_coordonnee_finale).g*importance_de_la_case;
-                    b += image.pixel(x_coordonnee_finale,y_coordonnee_finale).b*importance_de_la_case;
+                    final_color.r += image.pixel(x_coordonnee_finale,y_coordonnee_finale).r*importance_de_la_case;
+                    final_color.g += image.pixel(x_coordonnee_finale,y_coordonnee_finale).g*importance_de_la_case;
+                    final_color.b += image.pixel(x_coordonnee_finale,y_coordonnee_finale).b*importance_de_la_case;
                 }
             }
-            // std::cout << std::endl;
-            image_blurred.pixel(x,y).r = r;
-            image_blurred.pixel(x,y).g = g;
-            image_blurred.pixel(x,y).b = b;
-            //remise à 0
-            r = 0;
-            g=0;
-            b=0;
-
-            // std::cout << y << std::endl;
+            finale_image.pixel(x,y).r = final_color.r;
+            finale_image.pixel(x,y).g = final_color.g;
+            finale_image.pixel(x,y).b = final_color.b;
         }
     }
-    image_blurred.save("output/outline.png");
+    finale_image.save("output/outline.png");
 }
 
 void emboss(sil::Image& image) {
-    sil::Image image_blurred = {image.width(), image.height()};
+    sil::Image finale_image = {image.width(), image.height()};
     int const strength_blur {1};
-    float r  {};
-    float g  {};
-    float b  {};
     int x_coordonnee_finale {};
     int y_coordonnee_finale {};
     int importance_de_la_case {};
@@ -842,6 +813,7 @@ void emboss(sil::Image& image) {
     {
         for (int y {0}; y < image.height(); y++)
         {
+            glm::vec3 final_color = {{}, {}, {}};
             //addition de tous les pixels autour du pixel en cours
             for (int x_autour {-strength_blur}; x_autour < strength_blur+1; x_autour++)
             {
@@ -868,33 +840,22 @@ void emboss(sil::Image& image) {
                     } else {
                         importance_de_la_case = y_autour+x_autour;
                     }
-                    // std::cout << x_autour << "|" << y_autour << ": " << 0.25/importance_de_la_case << std::endl;
-                    r += image.pixel(x_coordonnee_finale,y_coordonnee_finale).r*importance_de_la_case;
-                    g += image.pixel(x_coordonnee_finale,y_coordonnee_finale).g*importance_de_la_case;
-                    b += image.pixel(x_coordonnee_finale,y_coordonnee_finale).b*importance_de_la_case;
+                    final_color.r += image.pixel(x_coordonnee_finale,y_coordonnee_finale).r*importance_de_la_case;
+                    final_color.g += image.pixel(x_coordonnee_finale,y_coordonnee_finale).g*importance_de_la_case;
+                    final_color.b += image.pixel(x_coordonnee_finale,y_coordonnee_finale).b*importance_de_la_case;
                 }
             }
-            // std::cout << std::endl;
-            image_blurred.pixel(x,y).r = r;
-            image_blurred.pixel(x,y).g = g;
-            image_blurred.pixel(x,y).b = b;
-            //remise à 0
-            r = 0;
-            g=0;
-            b=0;
-
-            // std::cout << y << std::endl;
+            finale_image.pixel(x,y).r = final_color.r;
+            finale_image.pixel(x,y).g = final_color.g;
+            finale_image.pixel(x,y).b = final_color.b;
         }
     }
-    image_blurred.save("output/embross.png");
+    finale_image.save("output/embross.png");
 };
 
 void sharpen(sil::Image& image) {
-    sil::Image image_blurred = {image.width(), image.height()};
+    sil::Image finale_image = {image.width(), image.height()};
     int const strength_blur {1};
-    float r  {};
-    float g  {};
-    float b  {};
     int x_coordonnee_finale {};
     int y_coordonnee_finale {};
     int importance_de_la_case {};
@@ -903,6 +864,7 @@ void sharpen(sil::Image& image) {
     {
         for (int y {0}; y < image.height(); y++)
         {
+            glm::vec3 final_color = {{}, {}, {}};
             //addition de tous les pixels autour du pixel en cours
             for (int x_autour {-strength_blur}; x_autour < strength_blur+1; x_autour++)
             {
@@ -931,26 +893,322 @@ void sharpen(sil::Image& image) {
                     } else {
                         importance_de_la_case = 0;
                     }
-                    // std::cout << x_autour << "|" << y_autour << ": " << 0.25/importance_de_la_case << std::endl;
-                    r += image.pixel(x_coordonnee_finale,y_coordonnee_finale).r*importance_de_la_case;
-                    g += image.pixel(x_coordonnee_finale,y_coordonnee_finale).g*importance_de_la_case;
-                    b += image.pixel(x_coordonnee_finale,y_coordonnee_finale).b*importance_de_la_case;
+                    final_color.r += image.pixel(x_coordonnee_finale,y_coordonnee_finale).r*importance_de_la_case;
+                    final_color.g += image.pixel(x_coordonnee_finale,y_coordonnee_finale).g*importance_de_la_case;
+                    final_color.b += image.pixel(x_coordonnee_finale,y_coordonnee_finale).b*importance_de_la_case;
                 }
             }
-            // std::cout << std::endl;
-            image_blurred.pixel(x,y).r = r;
-            image_blurred.pixel(x,y).g = g;
-            image_blurred.pixel(x,y).b = b;
-            //remise à 0
-            r = 0;
-            g=0;
-            b=0;
-
-            // std::cout << y << std::endl;
+            finale_image.pixel(x,y).r = final_color.r;
+            finale_image.pixel(x,y).g = final_color.g;
+            finale_image.pixel(x,y).b = final_color.b;
         }
     }
-    image_blurred.save("output/sharpen.png");
+    finale_image.save("output/sharpen.png");
 };
+
+void diamond_square_1(int const taille_n) {
+    //definition taille de la carte
+    sil::Image carte {static_cast<int>(pow(2, taille_n))+1, static_cast<int>(pow(2, taille_n))+1};
+    std::vector<std::vector<int>> tableau_hauteur{};
+    // extrémités : entre 1 et 2 puissance n+1 + entre 2 puissance n-1 et  - (2 puissance n-1)
+    // centre : moyenne des 4 extrémités + entre 2 puissance n-1 et  - (2 puissance n-1)
+    //diamand : moyenne centre extrémités proches + 
+    //pour carrée + petit -> pareille ms valeur alea -4 4 descend à -2 2 (2 puissance n-2)
+
+    //deifnition panel hauteur de la carte 
+    int const hauteur_max = pow(2, taille_n+1);
+
+    int hauteur_centre {};
+    //mise en place des extrémités sur la carte
+    for (int i {}; i < 4; i++)
+    {
+        int hauteur_random = std::rand() % hauteur_max + 1; //hauteur entre hateur_max et 1
+        glm::vec3 couleur_random = {static_cast<float>(hauteur_random)/hauteur_max, static_cast<float>(hauteur_random)/hauteur_max, static_cast<float>(hauteur_random)/hauteur_max};
+        switch (i)
+        {
+        case 0:
+            carte.pixel(0,0) = couleur_random;
+            break;
+        case 1:
+            carte.pixel(carte.width()-1,0) = couleur_random;
+            break;
+        case 2:
+            carte.pixel(0,carte.height()-1) = couleur_random;
+            break;
+        
+        default:
+            carte.pixel(carte.width()-1, carte.height()-1) = couleur_random;
+            break;
+        }
+
+        hauteur_centre += hauteur_random;
+    }
+
+    int max_variante_hauteur {static_cast<int>(pow(2, taille_n-1))};
+    hauteur_centre /= 4;
+    hauteur_centre += std::rand()% max_variante_hauteur - max_variante_hauteur;
+
+    //centre de la carte
+    carte.pixel(carte.width()/2, carte.height()/2) = {static_cast<float>(hauteur_centre)/hauteur_max, static_cast<float>(hauteur_centre)/hauteur_max, static_cast<float>(hauteur_centre)/hauteur_max};
+    
+    carte.save("output/diamond_square.png");
+
+    
+    //partie diamand
+    float variante_de_gris{};
+    float variante_aleatoire_couleur {};
+    for (int i {}; i < 4; i++)
+    {
+        variante_aleatoire_couleur = (std::rand()% max_variante_hauteur - max_variante_hauteur)/hauteur_max;
+        switch (i)
+        {
+        case 0:
+            variante_de_gris = (carte.pixel(carte.width()/2, carte.height()/2).r/*CENTRE*/+carte.pixel(0,0).r/*HG*/+carte.pixel(0,carte.height()-1).r/*BG*/)/3+variante_aleatoire_couleur;/*GAUCHE */
+            /*verif variante de gris*/
+            if(variante_de_gris > 1) {
+                variante_de_gris = 1;
+            } else if(variante_de_gris < 0) {
+                variante_de_gris = 0;
+            }
+
+            carte.pixel(0,carte.height()/2) = {variante_de_gris, variante_de_gris, variante_de_gris};
+            break;
+        case 1:
+            variante_de_gris = (carte.pixel(carte.width()/2, carte.height()/2).r/*CENTRE*/+carte.pixel(0,0).r/*HG*/+carte.pixel(carte.width()-1,0).r/*HD*/)/3+variante_aleatoire_couleur;/*HAUT*/
+            
+            /*verif variante de gris*/
+            if(variante_de_gris > 1) {
+                variante_de_gris = 1;
+            } else if(variante_de_gris < 0) {
+                variante_de_gris = 0;
+            }
+
+            carte.pixel(carte.width()/2,0) = {variante_de_gris, variante_de_gris, variante_de_gris};
+            break;
+        case 2:
+            variante_de_gris = (carte.pixel(carte.width()/2, carte.height()/2).r/*CENTRE*/+carte.pixel(carte.width()-1,0).r/*HD*/+carte.pixel(carte.width()-1,carte.height()-1).r/*BD*/)/3+variante_aleatoire_couleur;/*DROITE*/
+            
+                        /*verif variante de gris*/
+            if(variante_de_gris > 1) {
+                variante_de_gris = 1;
+            } else if(variante_de_gris < 0) {
+                variante_de_gris = 0;
+            }
+            
+            carte.pixel(carte.width()-1,carte.height()/2) = {variante_de_gris, variante_de_gris, variante_de_gris};
+            break;
+        
+        default:
+            variante_de_gris = (carte.pixel(carte.width()/2, carte.height()/2).r/*CENTRE*/+carte.pixel(carte.width()-1,carte.height()-1).r/*BD*/+carte.pixel(0,carte.height()-1).r/*BG*/)/3+variante_aleatoire_couleur;/*BAS*/
+            
+                        /*verif variante de gris*/
+            if(variante_de_gris > 1) {
+                variante_de_gris = 1;
+            } else if(variante_de_gris < 0) {
+                variante_de_gris = 0;
+            }
+            
+            carte.pixel(carte.width()/2,carte.height()-1) = {variante_de_gris, variante_de_gris, variante_de_gris};
+            break;
+        }
+    }
+    
+
+    // //nombre de fois qu'on va repeter les mêmes operations
+    // for (int i = 0; i < carte.width()/3; i++)
+    // {
+    //     /* code */
+    // }
+    
+    carte.save("output/diamond_square.png");
+}
+
+void diamond_square(int const taille_n) {
+    //definition taille de la carte
+    srand(172);
+    //TODO verif que les divisions se font sur des valeurs FLOAT
+    sil::Image carte {static_cast<int>(pow(2, taille_n))+1, static_cast<int>(pow(2, taille_n))+1};
+    std::vector<std::vector<int>> tableau_hauteur{};
+    // extrémités : entre 1 et 2 puissance n+1 + entre 2 puissance n-1 et  - (2 puissance n-1)
+    // centre : moyenne des 4 extrémités + entre 2 puissance n-1 et  - (2 puissance n-1)
+    //diamand : moyenne centre extrémités proches + 
+    //pour carrée + petit -> pareille ms valeur alea -4 4 descend à -2 2 (2 puissance n-2)
+
+    //deifnition panel hauteur de la carte 
+    int const hauteur_max = pow(2, taille_n+1);
+
+    //mise en place des extrémités sur la carte
+    for (int i {}; i < 4; i++)
+    {
+        int hauteur_random = std::rand() % hauteur_max + 5; //hauteur entre hauteur_max et 1
+        glm::vec3 couleur_random = {static_cast<float>(hauteur_random)/hauteur_max, static_cast<float>(hauteur_random)/hauteur_max, static_cast<float>(hauteur_random)/hauteur_max};
+        switch (i)
+        {
+        case 0:
+            carte.pixel(0,0) = couleur_random;
+            break;
+        case 1:
+            carte.pixel(carte.width()-1,0) = couleur_random;
+            break;
+        case 2:
+            carte.pixel(0,carte.height()-1) = couleur_random;
+            break;
+        
+        default:
+            carte.pixel(carte.width()-1, carte.height()-1) = couleur_random;
+            break;
+        }
+    }
+
+    
+    int max_variante_hauteur {static_cast<int>(pow(2, taille_n-1))};
+    //boucle de répetition de plus en plus petit du schema
+    for (int i {}; i < (pow(2,taille_n)+1)/3; i++)
+    {
+
+        //deplacement dans le carree
+        for (int X {}; X < pow(2,i); X++)
+        {
+            carte.save("output/diamond_square.png");
+            for (int Y {}; Y < pow(2,i); Y++)
+            {
+                //PARTIE CENTRE
+
+                //recherche des points sur les extrémités
+                glm::vec2 point_haut_gauche {X*((carte.width()-1)/pow(2,i)),
+                                            Y*((carte.height()-1)/pow(2,i))};
+
+                glm::vec2 point_haut_droite {X*((carte.width()-1)/pow(2,i)) + (carte.width()-1)/pow(2,i),
+                                            Y*((carte.height()-1)/pow(2,i))};
+
+                glm::vec2 point_bas_gauche {X*((carte.width()-1)/pow(2,i)),
+                                            Y*((carte.height()-1)/pow(2,i)) + (carte.height()-1)/pow(2,i)};
+
+                glm::vec2 point_bas_droit {X*((carte.width()-1)/pow(2,i)) + (carte.width()-1)/pow(2,i),
+                                            Y*((carte.height()-1)/pow(2,i)) + (carte.height()-1)/pow(2,i)};
+
+                float gray_gradient = (carte.pixel(point_haut_gauche.x, point_haut_gauche.y).r
+                                        +carte.pixel(point_haut_droite.x, point_haut_droite.y).r
+                                        +carte.pixel(point_bas_gauche.x, point_bas_gauche.y).r
+                                        +carte.pixel(point_bas_droit.x, point_bas_droit.y).r)/4;
+                //ajout d'une couleur aleatoire
+                gray_gradient += static_cast<float>(std::rand()% max_variante_hauteur - max_variante_hauteur)/hauteur_max;
+                if(gray_gradient <0) {
+                    gray_gradient = 0;
+                } else if(gray_gradient > 1) {
+                    gray_gradient = 1;
+                }
+                
+                //modification de la couleur sur le pixel central
+                // glm::vec2 point_centrale = {/*X*/ X*((carte.width()-1)/pow(2,i)) + (carte.width()-1)/pow(2,i),
+                //                             /*Y*/ 0
+                // }
+                glm::vec2 point_centrale = {(X*((carte.width()-1)/pow(2,i)) + (X+1)*(carte.width()-1)/pow(2,i))/*extremite gauxhe*/
+                                            /2, //FIXME le point central fait 2/2 puis 2/4 alors que ca devrait être 2/8
+                                            (Y*((carte.height()-1)/pow(2,i)) + (Y+1)*(carte.height()-1)/pow(2,i))
+                                            /2};
+                std::cout << "point centrale: " << point_centrale.x << "|" << point_centrale.y << std::endl;
+                // std::cout << "i: " << i << std::endl;
+                // std::cout << "H: " << X*((carte.width()-1)/pow(2,i)) + (carte.width()-1)/pow(2,i) << std::endl;
+                // std::cout << "BD: " << (carte.width()-1)/pow(2,i) << std::endl;
+                
+                carte.pixel(point_centrale.x, point_centrale.y) = {gray_gradient, gray_gradient, gray_gradient};
+
+
+                /*PARTIE DIAMAND*/
+                
+                float variante_de_gris{};
+                float variante_aleatoire_couleur {};
+                //on a le point centrale
+
+                for (int i {}; i < 4; i++)
+                {
+                    variante_aleatoire_couleur = static_cast<float>(std::rand()% max_variante_hauteur - max_variante_hauteur)/hauteur_max;
+                    switch (i)
+                    {
+                        /*HAUT*/
+                    case 0:
+                        variante_de_gris = (carte.pixel(point_haut_gauche.x,point_haut_gauche.y).r
+                                            +carte.pixel(point_haut_droite.x,point_haut_droite.y).r)
+                                            /2+variante_aleatoire_couleur;
+                        /*verif variante de gris*/
+                        if(variante_de_gris > 1) {
+                            variante_de_gris = 1;
+                        } else if(variante_de_gris < 0) {
+                            variante_de_gris = 0;
+                        }
+
+                        carte.pixel((X*((carte.width()-1)/pow(2,i)) + (carte.width()-1)/pow(2,i))/2
+                                    ,Y*((carte.height()-1)/pow(2,i)))
+                                    = {variante_de_gris, variante_de_gris, variante_de_gris};
+                        break;
+
+                        /*DROITE*/
+                    case 1:
+                        //recherche des points à additionner
+
+                        variante_de_gris = (carte.pixel(point_haut_droite.x,point_haut_droite.y).r
+                                            +carte.pixel(point_bas_droit.x, point_bas_droit.y).r)
+                                            /2+variante_aleatoire_couleur;
+                        
+                        /*verif variante de gris*/
+                        if(variante_de_gris > 1) {
+                            variante_de_gris = 1;
+                        } else if(variante_de_gris < 0) {
+                            variante_de_gris = 0;
+                        }
+
+                        carte.pixel(X*((carte.width()-1)/pow(2,i)) + (carte.width()-1)/pow(2,i)
+                                    ,(Y*((carte.height()-1)/pow(2,i)) + (carte.height()-1)/pow(2,i))/2)
+                                    = {variante_de_gris, variante_de_gris, variante_de_gris};
+                        break;
+
+
+                        /*BAS*/
+                    case 2:
+                        variante_de_gris = (carte.pixel(point_bas_droit.x, point_bas_droit.y).r
+                                            +carte.pixel(point_bas_gauche.x,point_bas_gauche.y).r)
+                                            /2+variante_aleatoire_couleur;
+                        
+                                    /*verif variante de gris*/
+                        if(variante_de_gris > 1) {
+                            variante_de_gris = 1;
+                        } else if(variante_de_gris < 0) {
+                            variante_de_gris = 0;
+                        }
+                        
+                        carte.pixel((X*((carte.width()-1)/pow(2,i)) + (carte.width()-1)/pow(2,i))/2,
+                                    Y*((carte.height()-1)/pow(2,i)) + (carte.height()-1)/pow(2,i))
+                                    = {variante_de_gris, variante_de_gris, variante_de_gris};
+                        break;
+                    
+                        /*GAUCHE*/
+                    default:
+                        variante_de_gris = (carte.pixel(point_bas_gauche.x, point_bas_gauche.y).r
+                                            +carte.pixel(point_haut_gauche.x,point_haut_gauche.y).r)
+                                            /2+variante_aleatoire_couleur;
+                        
+                                    /*verif variante de gris*/
+                        if(variante_de_gris > 1) {
+                            variante_de_gris = 1;
+                        } else if(variante_de_gris < 0) {
+                            variante_de_gris = 0;
+                        }
+                        
+                        carte.pixel(X*((carte.width()-1)/pow(2,i))
+                                    ,(Y*((carte.height()-1)/pow(2,i)) + (carte.height()-1)/pow(2,i))/2)
+                                    = {variante_de_gris, variante_de_gris, variante_de_gris};
+                        break;
+                    }
+                }
+            }
+        }
+
+        max_variante_hauteur /=2;
+    }
+    
+    carte.save("output/diamond_square.png");
+}
 
 int main()
 {
@@ -1070,9 +1328,8 @@ int main()
     // oeil_terrifiant(image);
     // image.save("output/oeil_terrifiant.png");
 
-    //vortex TODO
-    // sil::Image photo{"images/photo.jpg"};
-    // vortex(photo);
+    //vortex
+    // vortex(image);
 
     //effet neon
     // neon(image);
@@ -1084,5 +1341,14 @@ int main()
     // outline(image);
 
     //sharpen
-    sharpen(image);
+    // sharpen(image);
+
+    //blur
+    // blur(image);
+
+    //diamond_square
+    // sil::Image image_diamond{300/*width*/, 200/*height*/};
+    int const taille_carte {3};
+    diamond_square(taille_carte);
+    // image_diamond.save("output/diamond_square.png");
 };
