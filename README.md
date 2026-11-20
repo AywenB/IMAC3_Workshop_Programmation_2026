@@ -20,7 +20,7 @@
   - [Exercice 13: Animation](#exercice-13-animation)
   - [Exercice 14: Rosace](#exercice-14-rosace)
   - [Exercice 15: Mosaïque](#exercice-15-mosaïque)
-  - [Exercice 16: Mosaïque mirroir](#exercice-16-mosaïque-mirroir)
+  - [Exercice 16: Mosaïque miroir](#exercice-16-mosaïque-miroir)
   - [Exercice 17: Glitch](#exercice-17-glitch)
   - [Exercice 18: Tri de pixel](#exercice-18-tri-de-pixel)
     - [Tri de tous les pixels](#tri-de-tous-les-pixels)
@@ -107,12 +107,14 @@
 ## Exercice 15: Mosaïque
 
 ![](./output/mosaique.png)
+
 J'ai eu beaucoup de mal avec celui-là parce que je n'utilisais pas % et je tombais tout le temps en dehors de l'image.
 
-## Exercice 16: Mosaïque mirroir
+## Exercice 16: Mosaïque miroir
 
 ![](./output/mosaique_mirroir.png)
-Pour inverser, j'ai fais en sorte d'avoir 2 templates (1 avec le logo normal, 1 avec le logo en mirroir). Lorsque le programme finissait 1 ligne du logo, il venait prendre l'autre template. Et lorsque le programme finissait une colonne du logo, il venait renverser les templates. 
+
+Pour inverser, j'ai fait en sorte d'avoir 2 templates (1 avec le logo normal, 1 avec le logo en miroir). Lorsque le programme finissait 1 ligne du logo, il venait prendre l'autre template. Et lorsque le programme finissait une colonne du logo, il venait renverser les templates. 
 
 ## Exercice 17: Glitch
 
@@ -127,14 +129,19 @@ Pour inverser, j'ai fais en sorte d'avoir 2 templates (1 avec le logo normal, 1 
 ![](./output/sorting_pixels_line_by_line.png)
 ### Tri des pixels de manière aléatoire
 ![](./output/sorting_pixels_randomly.png)
+
 Pour le dernier je ne sais pas pourquoi mais le tri ne se fait qu'en bas de l'image. 
 
 ## Exercice 19: Fractale de Mandelbrot
 
 ![](./output/fractale_de_mandelbrot.png)
+
 Changement de la formule avec : sqrt(z)*z+c
+
 ![](./output/fractale.png)
+
 Au début j'avais oublié de mettre mes données en float, ce qui donnait un gros pâté blanc :
+
 ![](./output/fractale_de_mandelbrot_moche.png)
 
 ## Exercice 20: Dégradés dans l'espace de couleur Lab
@@ -147,16 +154,23 @@ Au début j'avais oublié de mettre mes données en float, ce qui donnait un gro
 ## Exercice 23: Vortex
 
 ![](./output/vortex.png)
-Voici d'autres résultats marrants que j'ai obtenu :
+
+Voici d'autres résultats marrants que j'ai obtenus :
+
 ![](./output/bricbrac.png)
-J'ai juste échangé les pixels en fonction de la rotation sans avoir d'images en backup pour accueilir le rendu.
+
+J'ai juste échangé les pixels en fonction de la rotation sans avoir d'images en backup pour accueillir le rendu.
+
 ![](./output/oeil_terrifiant.png)
+
 Ici j'ai juste mis l'effet très fort.
 
 ## Exercice 24: Convolution
 
 ![](./output/blur.png)
+
 J'ai voulu changer la formule pour faire en sorte que en fonction de la position du pixel sa couleur impacte plus ou moins l'image finale, mais j'ai mal calculé mes divisions et ai obtenu un effet néon à la place :
+
 ![](./output/blur_2.png)
 ![](./output/neon.png)
 
@@ -171,18 +185,19 @@ J'ai voulu changer la formule pour faire en sorte que en fonction de la position
 
 ## Exercice 30: Diamond Square
 ![](./output/diamond_square.png)
+
 J'ai voulu créer un algorithme qui, qu'importe la taille de la carte, va créer l'image.
 Déjà, j'ai commencé par définir les couleurs des coins.
-Puis j'ai défini 2 acions différentes à répéter :
+Puis j'ai défini 2 actions différentes à répéter :
 - Définir le pixel central
 - Définir les pixels sur les côtés
 
 Comme j'ai voulu tout automatiser, j'ai décidé de répéter ces actions dans 3 boucles différentes :
-- Une première boucle pour dire à quel niveau de retrécissement on en est pour l'application du diamant (ex: on a une image qu'on divise en 4 zones égales, puis chacune de ces zones sont divisées en 4 zones égales etc.)
+- Une première boucle pour dire à quel niveau de rétrécissement on en est pour l'application du diamant (ex: on a une image qu'on divise en 4 zones égales, puis chacune de ces zones est divisée en 4 zones égales etc.)
 - Deux autres boucles pour parcourir les sous-divisions de l'image.
 
 Exemple : 
-Nous avons une image. Au premier tour, le programme n'a pas de sous-division et va donc appliquer les actions sur toute l'image. Au second tour, l'image est divisée en quatre : Le programme va alors parcourir les 4 carrées et appliquer les actions dans chacun de ces carrées.
+Nous avons une image. Au premier tour, le programme n'a pas de sous-division et va donc appliquer les actions sur toute l'image. Au second tour, l'image est divisée en quatre : Le programme va alors parcourir les 4 carrés et appliquer les actions dans chacun de ces carrés.
 Et ainsi de suite.
 
-J'ai eu beaucoup de difficultés pour celui-là, notamment pour connaître la position des pixels en fonction du niveau de rétrecissement en cours.
+J'ai eu beaucoup de difficultés pour celui-là, notamment pour connaître la position des pixels en fonction du niveau de rétrécissement en cours.
