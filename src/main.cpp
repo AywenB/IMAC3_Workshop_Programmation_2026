@@ -447,23 +447,24 @@ void fractale(sil::Image &image)
     {
         for (int y{0}; y < image.height(); y++)
         {
-            std::complex<float> c {(static_cast<float>(x-image.width())/2)/100 +1.5, (static_cast<float>(y-image.height())/2)/100 +1}; //TODO mapper pour que ce soit entre -2 et 2
+            // std::complex<float> c {(static_cast<float>(x-image.width())/2)/100 +1.5, (static_cast<float>(y-image.height())/2)/100 +1}; //TODO mapper pour que ce soit entre -2 et 2
+            std::complex<float> c {(static_cast<float>(x-image.width())/2)/100 +1, (static_cast<float>(y-image.height())/2)/100 +1}; //TODO mapper pour que ce soit entre -2 et 2
             std::complex<float> z {0,0};
             //verification de la fractal
             float gradient {};
             for (gradient; gradient < precision; gradient++)
             {
                 //fractal artistique
-                z = sqrt(z)*z+c;
-                if(std::abs(z) > 2) {
-                    break;
-                }
-
-                //fractal normal
-                // z = z*z+c;
+                // z = sqrt(z)*z+c;
                 // if(std::abs(z) > 2) {
                 //     break;
                 // }
+
+                //fractal normal
+                z = z*z+c;
+                if(std::abs(z) > 2) {
+                    break;
+                }
             }
             gradient /= precision;
             image.pixel(x,y).r = gradient;
@@ -1023,16 +1024,11 @@ void diamond_square_1(int const taille_n) {
     carte.save("output/diamond_square.png");
 }
 
-void diamond_square(int const taille_n) {
+void diamond_square(int const taille_n, int const seed) {
     //definition taille de la carte
-    srand(172);
-    //TODO verif que les divisions se font sur des valeurs FLOAT
+    srand(seed);
     sil::Image carte {static_cast<int>(pow(2, taille_n))+1, static_cast<int>(pow(2, taille_n))+1};
     std::vector<std::vector<int>> tableau_hauteur{};
-    // extrémités : entre 1 et 2 puissance n+1 + entre 2 puissance n-1 et  - (2 puissance n-1)
-    // centre : moyenne des 4 extrémités + entre 2 puissance n-1 et  - (2 puissance n-1)
-    //diamand : moyenne centre extrémités proches + 
-    //pour carrée + petit -> pareille ms valeur alea -4 4 descend à -2 2 (2 puissance n-2)
 
     //deifnition panel hauteur de la carte 
     int const hauteur_max = pow(2, taille_n+1);
@@ -1069,7 +1065,7 @@ void diamond_square(int const taille_n) {
         //deplacement dans le carree
         for (int X {}; X < pow(2,i); X++)
         {
-            carte.save("output/diamond_square.png");
+            // carte.save("output/diamond_square.png");
             for (int Y {}; Y < pow(2,i); Y++)
             {
                 //PARTIE CENTRE
@@ -1100,26 +1096,29 @@ void diamond_square(int const taille_n) {
                 }
                 
                 //modification de la couleur sur le pixel central
-                // glm::vec2 point_centrale = {/*X*/ X*((carte.width()-1)/pow(2,i)) + (carte.width()-1)/pow(2,i),
-                //                             /*Y*/ 0
-                // }
-                glm::vec2 point_centrale = {(X*((carte.width()-1)/pow(2,i)) + (X+1)*(carte.width()-1)/pow(2,i))/*extremite gauxhe*/
-                                            /2, //FIXME le point central fait 2/2 puis 2/4 alors que ca devrait être 2/8
+                glm::vec2 point_centrale = {(X*((carte.width()-1)/pow(2,i)) + (X+1)*(carte.width()-1)/pow(2,i))
+                                            /2,
                                             (Y*((carte.height()-1)/pow(2,i)) + (Y+1)*(carte.height()-1)/pow(2,i))
                                             /2};
-                std::cout << "point centrale: " << point_centrale.x << "|" << point_centrale.y << std::endl;
-                // std::cout << "i: " << i << std::endl;
-                // std::cout << "H: " << X*((carte.width()-1)/pow(2,i)) + (carte.width()-1)/pow(2,i) << std::endl;
-                // std::cout << "BD: " << (carte.width()-1)/pow(2,i) << std::endl;
                 
                 carte.pixel(point_centrale.x, point_centrale.y) = {gray_gradient, gray_gradient, gray_gradient};
-
 
                 /*PARTIE DIAMAND*/
                 
                 float variante_de_gris{};
                 float variante_aleatoire_couleur {};
-                //on a le point centrale
+                /*Coordonnees des coins*/
+                glm::vec2 coin_haut {(X*((carte.width()-1)/pow(2,i)) + (X+1)*(carte.width()-1)/pow(2,i))/2
+                                    ,Y*((carte.height()-1)/pow(2,i))};
+
+                glm::vec2 coin_bas {(X*((carte.width()-1)/pow(2,i)) + (X+1)*(carte.width()-1)/pow(2,i))/2
+                                    ,Y*((carte.height()-1)/pow(2,i)) + (carte.height()-1)/pow(2,i)};
+
+                glm::vec2 coin_gauche {X*((carte.width()-1)/pow(2,i)),
+                                      (Y*((carte.width()-1)/pow(2,i)) + (Y+1)*(carte.height()-1)/pow(2,i))/2};
+
+                glm::vec2 coin_droit {X*((carte.width()-1)/pow(2,i)) + (carte.width()-1)/pow(2,i),
+                                    (Y*((carte.width()-1)/pow(2,i)) + (Y+1)*(carte.height()-1)/pow(2,i))/2};
 
                 for (int i {}; i < 4; i++)
                 {
@@ -1128,9 +1127,9 @@ void diamond_square(int const taille_n) {
                     {
                         /*HAUT*/
                     case 0:
-                        variante_de_gris = (carte.pixel(point_haut_gauche.x,point_haut_gauche.y).r
-                                            +carte.pixel(point_haut_droite.x,point_haut_droite.y).r)
-                                            /2+variante_aleatoire_couleur;
+                        variante_de_gris = (carte.pixel(point_haut_droite.x,point_haut_droite.y).r
+                            +carte.pixel(point_haut_gauche.x, point_haut_gauche.y).r)
+                            /2+variante_aleatoire_couleur;
                         /*verif variante de gris*/
                         if(variante_de_gris > 1) {
                             variante_de_gris = 1;
@@ -1138,14 +1137,12 @@ void diamond_square(int const taille_n) {
                             variante_de_gris = 0;
                         }
 
-                        carte.pixel((X*((carte.width()-1)/pow(2,i)) + (carte.width()-1)/pow(2,i))/2
-                                    ,Y*((carte.height()-1)/pow(2,i)))
-                                    = {variante_de_gris, variante_de_gris, variante_de_gris};
+                        carte.pixel(coin_haut.x, coin_haut.y)
+                                = {variante_de_gris, variante_de_gris, variante_de_gris};
                         break;
 
                         /*DROITE*/
                     case 1:
-                        //recherche des points à additionner
 
                         variante_de_gris = (carte.pixel(point_haut_droite.x,point_haut_droite.y).r
                                             +carte.pixel(point_bas_droit.x, point_bas_droit.y).r)
@@ -1158,8 +1155,7 @@ void diamond_square(int const taille_n) {
                             variante_de_gris = 0;
                         }
 
-                        carte.pixel(X*((carte.width()-1)/pow(2,i)) + (carte.width()-1)/pow(2,i)
-                                    ,(Y*((carte.height()-1)/pow(2,i)) + (carte.height()-1)/pow(2,i))/2)
+                        carte.pixel(coin_droit.x, coin_droit.y)
                                     = {variante_de_gris, variante_de_gris, variante_de_gris};
                         break;
 
@@ -1177,13 +1173,13 @@ void diamond_square(int const taille_n) {
                             variante_de_gris = 0;
                         }
                         
-                        carte.pixel((X*((carte.width()-1)/pow(2,i)) + (carte.width()-1)/pow(2,i))/2,
-                                    Y*((carte.height()-1)/pow(2,i)) + (carte.height()-1)/pow(2,i))
+                        carte.pixel(coin_bas.x, coin_bas.y)
                                     = {variante_de_gris, variante_de_gris, variante_de_gris};
                         break;
                     
                         /*GAUCHE*/
                     default:
+
                         variante_de_gris = (carte.pixel(point_bas_gauche.x, point_bas_gauche.y).r
                                             +carte.pixel(point_haut_gauche.x,point_haut_gauche.y).r)
                                             /2+variante_aleatoire_couleur;
@@ -1195,8 +1191,7 @@ void diamond_square(int const taille_n) {
                             variante_de_gris = 0;
                         }
                         
-                        carte.pixel(X*((carte.width()-1)/pow(2,i))
-                                    ,(Y*((carte.height()-1)/pow(2,i)) + (carte.height()-1)/pow(2,i))/2)
+                        carte.pixel(coin_gauche.x, coin_gauche.y)
                                     = {variante_de_gris, variante_de_gris, variante_de_gris};
                         break;
                     }
@@ -1205,9 +1200,8 @@ void diamond_square(int const taille_n) {
         }
 
         max_variante_hauteur /=2;
+        carte.save("output/diamond_square.png");
     }
-    
-    carte.save("output/diamond_square.png");
 }
 
 int main()
@@ -1303,7 +1297,7 @@ int main()
     // fractal
     // sil::Image image_fractale{500 /*width*/, 500 /*height*/};
     // fractale(image_fractale);
-    // image_fractale.save("output/fractale.png");
+    // image_fractale.save("output/fractale_de_mandelbrot.png");
 
 
     //gradient_between_two_colors
@@ -1347,8 +1341,6 @@ int main()
     // blur(image);
 
     //diamond_square
-    // sil::Image image_diamond{300/*width*/, 200/*height*/};
-    int const taille_carte {3};
-    diamond_square(taille_carte);
-    // image_diamond.save("output/diamond_square.png");
+    int const taille_carte {9};
+    diamond_square(taille_carte, 657);
 };
