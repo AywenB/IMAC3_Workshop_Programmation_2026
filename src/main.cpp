@@ -5,7 +5,6 @@
 #include <complex>
 #include <cmath>
 #include <glm/gtx/matrix_transform_2d.hpp>
-// #include <glm>
 
 void keep_green_only(sil::Image &image)
 {
@@ -50,9 +49,9 @@ void negative(sil::Image &image)
     }
 };
 
-void gradient(sil::Image &image, int width)
+void gradient(sil::Image &image)
 {
-    float const pas = 1.f / width;
+    float const pas = 1.f / image.width();
     float color_gradient{0.f};
     for (int x{0}; x < image.width(); x++)
     {
@@ -78,10 +77,9 @@ void mirrorside(sil::Image &image)
     }
 };
 
-void noise(sil::Image &image)
+void noise(sil::Image &image, int const percentage_of_noise)
 {
     float alea_color{0.f};
-    int const percentage_of_noise{20};
     for (glm::vec3 &color : image.pixels())
     {
         // generation nombre aléatoire pour si on change le pixel
@@ -130,14 +128,8 @@ void turning_90_degrees_left(sil::Image &image)
     }
 };
 
-void rgb_split(sil::Image &image)
+void rgb_split(sil::Image &image, int const decalage_px)
 {
-    // vert ne bouge pas
-    // rouge va vers la droite
-    // bleu va vers la gauche
-
-    unsigned int const decalage_px{25};
-
     // bleu
     for (int x{0}; x < image.width(); x++)
     {
@@ -173,7 +165,6 @@ void rgb_split(sil::Image &image)
 
 void brightening(sil::Image &image)
 {
-    float const add{0.5f};
     for (glm::vec3 &color : image.pixels())
     {
         color.r = sqrt(color.r);
@@ -184,7 +175,6 @@ void brightening(sil::Image &image)
 
 void darkening(sil::Image &image)
 {
-    float const substract{0.5f};
     for (glm::vec3 &color : image.pixels())
     {
         color.r = pow(color.r, 2);
@@ -193,9 +183,8 @@ void darkening(sil::Image &image)
     }
 };
 
-void create_a_circle(sil::Image &image)
+void create_a_circle(sil::Image &image, int const radius_circle)
 {
-    unsigned int const radius_circle{100};
     int const center_x{image.width() / 2};
     int const center_y{image.height() / 2};
 
@@ -214,9 +203,7 @@ void create_a_circle(sil::Image &image)
     }
 };
 
-void create_border_circle(sil::Image &image){
-    unsigned int const radius_circle{100};
-    unsigned int const thickness{10};
+void create_border_circle(sil::Image &image, unsigned int const radius_circle, unsigned int const thickness){
     int const center_x{image.width() / 2};
     int const center_y{image.height() / 2};
 
@@ -236,11 +223,9 @@ void create_border_circle(sil::Image &image){
     }
 };
 
-void create_an_animation(sil::Image &image){
-    unsigned int const radius_circle{100};
+void create_an_animation(sil::Image &image, unsigned int const radius_circle, int const number_of_frames){
     int center_x{0};
     int const center_y{image.height() / 2};
-    int const number_of_frames{5};
     int const pas{image.width() / number_of_frames};
 
     for (int i{}; i < number_of_frames; i++)
@@ -275,9 +260,7 @@ void create_an_animation(sil::Image &image){
     }
 };
 
-void rosace(sil::Image &image){
-    unsigned int const radius_circle{100};
-    unsigned int const thickness{5};
+void rosace(sil::Image &image, unsigned int const radius_circle, unsigned int const thickness){
     double const pas_angle{60 * M_PI / 180};
     int center_x{image.width() / 2};
     int center_y{image.height() / 2};
@@ -322,9 +305,8 @@ void rosace(sil::Image &image){
     }
 };
 
-void mosaique(sil::Image &image) {
+void mosaique(sil::Image &image, int const number_of_repetition) {
     sil::Image image_mosaique{image.width() /*width*/, image.height() /*height*/};
-    int const number_of_repetition{7};
     for (int x{}; x < image_mosaique.width(); x++)
     {
         for (int y{}; y < image_mosaique.height(); y++)
@@ -347,9 +329,8 @@ void mosaique_mirroir_reverse_ligne(sil::Image &image)
     }
 }
 
-void mosaique_mirroir(sil::Image &image) {
+void mosaique_mirroir(sil::Image &image, int const number_of_repetition) {
     sil::Image image_mosaique{image.width() /*width*/, image.height() /*height*/};
-    int const number_of_repetition{5};
     int tour{};
     sil::Image image_en_cours{image};
     // creation des deux images à utiliser :
@@ -380,12 +361,8 @@ void mosaique_mirroir(sil::Image &image) {
     image_mosaique.save("output/mosaique_mirroir.png");
 };
 
-void glitch(sil::Image &image)
+void glitch(sil::Image &image, int const number_of_boxes, int const largeur_glitch, int const hauteur_glitch)
 {
-    int const number_of_boxes{100};
-    int const largeur_glitch{10};
-    int const hauteur_glitch{50};
-
     for (int i{}; i < number_of_boxes; i++)
     {
         // coordonnes du glitch
@@ -427,9 +404,8 @@ void sorting_pixels_line_by_line(sil::Image &image)
     }
 }
 
-void sorting_pixels_randomly(sil::Image &image)
+void sorting_pixels_randomly(sil::Image &image, int const number_of_random_lines)
 {
-    int const number_of_random_lines{50};
     for (int i{}; i < number_of_random_lines; i++)
     {
         int start_line{std::rand() % (image.pixels().size()-1) + 1};
@@ -440,15 +416,14 @@ void sorting_pixels_randomly(sil::Image &image)
     }
 }
 
-void fractale(sil::Image &image)
+void fractale(sil::Image &image, int const precision)
 {
-    int const precision {15};
     for (int x{0}; x < image.width(); x++)
     {
         for (int y{0}; y < image.height(); y++)
         {
-            // std::complex<float> c {(static_cast<float>(x-image.width())/2)/100 +1.5, (static_cast<float>(y-image.height())/2)/100 +1}; //TODO mapper pour que ce soit entre -2 et 2
-            std::complex<float> c {(static_cast<float>(x-image.width())/2)/100 +1, (static_cast<float>(y-image.height())/2)/100 +1}; //TODO mapper pour que ce soit entre -2 et 2
+            // std::complex<float> c {(static_cast<float>(x-image.width())/2)/100 +1.5, (static_cast<float>(y-image.height())/2)/100 +1};
+            std::complex<float> c {(static_cast<float>(x-image.width())/2)/100 +1, (static_cast<float>(y-image.height())/2)/100 +1};
             std::complex<float> z {0,0};
             //verification de la fractal
             float gradient {};
@@ -653,9 +628,8 @@ void vortex(sil::Image& image) {
     image_vortex.save("output/vortex.png");
 }
 
-void blur(sil::Image& image) {
+void blur(sil::Image& image, int const strength_blur) {
     sil::Image finale_image = {image.width(), image.height()};
-    int const strength_blur {5};
     int x_coordonnee_finale {};
     int y_coordonnee_finale {};
     //on parcourt l'image
@@ -699,9 +673,8 @@ void blur(sil::Image& image) {
     finale_image.save("output/blur.png");
 }
 
-void neon(sil::Image& image) {
+void neon(sil::Image& image, int const strength_blur) {
     sil::Image finale_image = {image.width(), image.height()};
-    int const strength_blur {13};
     int x_coordonnee_finale {};
     int y_coordonnee_finale {};
     int importance_de_la_case {};
@@ -907,14 +880,10 @@ void sharpen(sil::Image& image) {
     finale_image.save("output/sharpen.png");
 };
 
-void diamond_square_1(int const taille_n) {
+void diamond_square_v_brouillon(int const taille_n) {
     //definition taille de la carte
     sil::Image carte {static_cast<int>(pow(2, taille_n))+1, static_cast<int>(pow(2, taille_n))+1};
     std::vector<std::vector<int>> tableau_hauteur{};
-    // extrémités : entre 1 et 2 puissance n+1 + entre 2 puissance n-1 et  - (2 puissance n-1)
-    // centre : moyenne des 4 extrémités + entre 2 puissance n-1 et  - (2 puissance n-1)
-    //diamand : moyenne centre extrémités proches + 
-    //pour carrée + petit -> pareille ms valeur alea -4 4 descend à -2 2 (2 puissance n-2)
 
     //deifnition panel hauteur de la carte 
     int const hauteur_max = pow(2, taille_n+1);
@@ -1206,139 +1175,159 @@ void diamond_square(int const taille_n, int const seed) {
 
 int main()
 {
-    sil::Image image{"images/logo.png"};
     // keep_green_only
+    // sil::Image image{"images/logo.png"};
     //  keep_green_only(image);
     //  image.save("output/keep_green_only.png");
 
     // swap_canal_red_and_blue
+    // sil::Image image{"images/logo.png"};
     //  swap_canal_red_and_blue(image);
     //  image.save("output/swap_canal_red_and_blue.png");
 
     // black and white
+    // sil::Image image{"images/logo.png"};
     //  black_and_white(image);
     //  image.save("output/black_and_white.png");
 
     // negative
+    // sil::Image image{"images/logo.png"};
     //  negative(image);
     //  image.save("output/negative.png");
 
     // gradient
     //  sil::Image image_gradient{300/*width*/, 200/*height*/};
-    //  gradient(image_gradient, 300);
+    //  gradient(image_gradient);
     //  image_gradient.save("output/gradient.png");
 
     // mirror
+    // sil::Image image{"images/logo.png"};
     //  mirrorside(image);
     //  image.save("output/mirrorside.png");
 
     // noise
-    //  noise(image);
+    // sil::Image image{"images/logo.png"};
+    //  noise(image, 15);
     //  image.save("output/noise.png");
 
     // turning_90_degrees
     // right
+    // sil::Image image{"images/logo.png"};
     //  turning_90_degrees_right(image);
     // left
+    // sil::Image image{"images/logo.png"};
     //  turning_90_degrees_left(image);
 
     // rgb_split
-    //  rgb_split(image);
+    // sil::Image image{"images/logo.png"};
+    //  rgb_split(image, 25);
     //  image.save("output/rgb_split.png");
 
     // brightening
-    //  sil::Image photo{"images/photo.jpg"};
+    // sil::Image photo{"images/photo.jpg"};
     //  brightening(photo);
     //  photo.save("output/brightening.png");
 
     // darkening
-    //  sil::Image photo{"images/photo.jpg"};
+    // sil::Image photo{"images/photo.jpg"};
     //  darkening(photo);
     //  photo.save("output/darkening.png");
 
     // create_a_circle
     //  sil::Image image_circle{500/*width*/, 500/*height*/};
-    //  create_a_circle(image_circle);
+    //  create_a_circle(image_circle, 100);
     //  image_circle.save("output/create_a_circle.png");
 
     // create_border_circle
     //  sil::Image image_circle{500/*width*/, 500/*height*/};
-    //  create_border_circle(image_circle);
+    //  create_border_circle(image_circle, 100, 10);
     //  image_circle.save("output/create_border_circle.png");
 
     // create_an_animation
     //  sil::Image image_animation{500/*width*/, 500/*height*/};
-    //  create_an_animation(image_animation);
+    //  create_an_animation(image_animation, 100, 5);
 
     // rosace
-    //  sil::Image image_rosace{500/*width*/, 500/*height*/};
-    //  rosace(image_rosace);
+    //  sil::Image image_rosace{500, 500};
+    //  rosace(image_rosace, 88, 10);
     //  image_rosace.save("output/rosace.png");
 
     // mosaique
-    //  mosaique(image);
+    // sil::Image image{"images/logo.png"};
+    //  mosaique(image, 10);
     //  mosaique_mirroir_reverse_ligne(image);
 
     // mosaique mirroir
-    // mosaique_mirroir(image);
+    // sil::Image image{"images/logo.png"};
+    // mosaique_mirroir(image, 5);
 
     // glitch
-    //  glitch(image);
+    // sil::Image image{"images/logo.png"};
+    //  glitch(image, 100, 20, 70);
     //  image.save("output/glitch.png");
 
     // tri de pixel
+    // sil::Image image{"images/logo.png"};
     // sorting_all_pixels(image);
     // image.save("output/sorting_all_pixels.png");
     // sorting_pixels_line_by_line(image);
     // image.save("output/sorting_pixels_line_by_line.png");
-    // sorting_pixels_randomly(image);
+    // sorting_pixels_randomly(image, 50);
     // image.save("output/sorting_pixels_randomly.png");
 
     // fractal
-    // sil::Image image_fractale{500 /*width*/, 500 /*height*/};
-    // fractale(image_fractale);
+    // sil::Image image_fractale{500, 500 };
+    // fractale(image_fractale, 20);
     // image_fractale.save("output/fractale_de_mandelbrot.png");
 
 
     //gradient_between_two_colors
-    // sil::Image image_gradient{300/*width*/, 200/*height*/};
+    // sil::Image image_gradient{300, 200};
     // glm::vec3 color2 = {0.f, 1.f, 0.f};
     // glm::vec3 color1 = {1.f, 0.f, 0.f};
     // gradient_between_two_colors(image_gradient, 300, color1, color2);
     // image_gradient.save("output/gradient_between_two_colors.png");
 
-    //gradient_between_two_colors
-    // sil::Image image_gradient{300/*width*/, 200/*height*/};
+    //gradient_between_two_colors Oklab
+    // sil::Image image_gradient{300, 200};
     // glm::vec3 color2 = {0.f, 1.f, 0.f};
     // glm::vec3 color1 = {1.f, 0.f, 0.f};
     // gradient_oklab_between_two_colors(image_gradient, color1, color2);
     // image_gradient.save("output/gradient_oklab_between_two_colors.png");
 
     //bricbrac
+    // sil::Image image{"images/logo.png"};
     // bricbrac(image);
     // image.save("output/bricbrac.png");
 
     //oeil_terrifiant
+    // sil::Image image{"images/logo.png"};
     // oeil_terrifiant(image);
     // image.save("output/oeil_terrifiant.png");
 
     //vortex
+    // sil::Image image{"images/logo.png"};
     // vortex(image);
 
     //effet neon
-    // neon(image);
+    // sil::Image image{"images/logo.png"};
+    // neon(image, 13);
 
     // //emboss
+    // sil::Image image{"images/logo.png"};
     // emboss(image);
 
     // //outline
+    // sil::Image image{"images/logo.png"};
     // outline(image);
 
     //sharpen
+    // sil::Image image{"images/logo.png"};
     // sharpen(image);
 
     //blur
-    // blur(image);
+    // sil::Image image{"images/logo.png"};
+    // blur(image, 7);
 
     //diamond_square
     int const taille_carte {9};
